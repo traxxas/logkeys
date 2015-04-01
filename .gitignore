@@ -1,4 +1,12 @@
 *.log
+Makefile
+config.h
+config.status
+stamp-h1
+src/.deps/
+src/llk
+src/llkk
+src/logkeys
 
 # vim buffers
 .*swp
