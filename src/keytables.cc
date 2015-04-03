@@ -1,9 +1,10 @@
 /*
   Copyleft (ɔ) 2009 Kernc
+               2015 wb@tuome.la
   This program is free software. It comes with absolutely no warranty whatsoever.
   See COPYING for further information.
   
-  Project homepage: http://code.google.com/p/logkeys/
+  Project homepage: https://github.com/traxxas/logkeys/
 */
 
 #ifndef _KEYTABLES_H_

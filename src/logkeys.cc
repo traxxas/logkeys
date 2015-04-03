@@ -1,9 +1,10 @@
 /*
   Copyleft (ɔ) 2009 Kernc
+               2015 wb@tuome.la
   This program is free software. It comes with absolutely no warranty whatsoever.
   See COPYING for further information.
   
-  Project homepage: http://code.google.com/p/logkeys/
+  Project homepage: https://github.com/traxxas/logkeys/
 */
 
 #include <cstdio>
@@ -56,7 +57,6 @@
 #include "usage.cc"      // usage() function
 #include "args.cc"       // global arguments struct and arguments parsing
 #include "keytables.cc"  // character and function key tables and helper functions
-#include "upload.cc"     // functions concerning remote uploading of log file
 
 namespace logkeys {
 
@@ -69,8 +69,8 @@ std::string execute(const char* cmd)
     char buffer[128];
     std::string result = "";
     while(!feof(pipe))
-    	if(fgets(buffer, 128, pipe) != NULL)
-    		result += buffer;
+      if(fgets(buffer, 128, pipe) != NULL)
+        result += buffer;
     pclose(pipe);
     return result;
 }
@@ -381,11 +381,6 @@ int main(int argc, char **argv)
   // if neither start nor export, that must be an error
   if (!args.start && !(args.flags & FLAG_EXPORT_KEYMAP)) { usage(); exit(EXIT_FAILURE); }
   
-  // if posting remote and post_size not set, set post_size to default [500K bytes]
-  if (args.post_size == 0 && (!args.http_url.empty() || !args.irc_server.empty())) {
-    args.post_size = 500000;
-  }
-  
   // check for incompatible flags
   if (!args.keymap.empty() && (!(args.flags & FLAG_EXPORT_KEYMAP) && args.us_keymap)) {  // exporting uses args.keymap also
     error(EXIT_FAILURE, 0, "Incompatible flags '-m' and '-u'. See usage.");
@@ -488,45 +483,6 @@ int main(int argc, char **argv)
       inc_size += fprintf(out, "<E-%x>", scan_code);
       if (inc_size > 0) file_size += inc_size;
       continue;
-    }
-    
-    // if remote posting is enabled and size treshold is reached
-    if (args.post_size != 0 && file_size >= args.post_size && stat(UPLOADER_PID_FILE, &st) == -1) {
-      fclose(out);
-      
-      std::stringstream ss;
-      for (int i = 1;; ++i) {
-        ss.clear();
-        ss.str("");
-        ss << args.logfile << "." << i;
-        if (stat(ss.str().c_str(), &st) == -1) break;  // file .log.i doesn't yet exist
-      }
-      
-      if (rename(args.logfile.c_str(), ss.str().c_str()) == -1)  // move current log file to indexed
-        error(EXIT_FAILURE, errno, "Error renaming logfile");
-      
-      out = fopen(args.logfile.c_str(), "a");  // open empty log file with the same name
-      if (!out)
-        error(EXIT_FAILURE, errno, "Error opening output file '%s'", args.logfile.c_str());
-      
-      file_size = 0;  // new log file is now empty
-      
-      // write new timestamp
-      time(&cur_time);
-      strftime(timestamp, sizeof(timestamp), TIME_FORMAT, localtime(&cur_time));
-      if (args.flags & FLAG_NO_TIMESTAMPS)
-        file_size += fprintf(out, "Logging started at %s\n\n", timestamp);
-      else
-        file_size += fprintf(out, "Logging started ...\n\n%s", timestamp);
-      
-      if (!args.http_url.empty() || !args.irc_server.empty()) {
-        switch (fork()) {
-        case -1: error(0, errno, "Error while forking remote-posting process");
-        case 0:  
-          start_remote_upload();  // child process will upload the .log.i files
-          exit(EXIT_SUCCESS);
-        }
-      }
     }
     
     // on key repeat ; must check before on key press
