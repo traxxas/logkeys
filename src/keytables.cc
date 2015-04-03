@@ -14,10 +14,13 @@
 
 namespace logkeys {
 
-// these are ordered default US keymap keys
+// these are ordered default for US QWERTY keymap
 wchar_t char_keys[49] =  L"1234567890-=qwertyuiop[]asdfghjkl;'`\\zxcvbnm,./<";
 wchar_t shift_keys[49] = L"!@#$%^&*()_+QWERTYUIOP{}ASDFGHJKL:\"~|ZXCVBNM<>?>";
-wchar_t altgr_keys[49] = {0}; // old, US don't use AltGr key: L"\0@\0$\0\0{[]}\\\0qwertyuiop\0~asdfghjkl\0\0\0\0zxcvbnm\0\0\0|";  // \0 on no symbol; as obtained by `loadkeys us`
+wchar_t altgr_keys[49] = {0};
+// old, US don't use AltGr key:
+// L"\0@\0$\0\0{[]}\\\0qwertyuiop\0~asdfghjkl\0\0\0\0zxcvbnm\0\0\0|";
+// \0 on no symbol; as obtained by `loadkeys us`
 // TODO: add altgr_shift_keys[] (http://en.wikipedia.org/wiki/AltGr_key#US_international)
 
 wchar_t func_keys[][8] = {
@@ -59,16 +62,21 @@ inline bool is_used_key(unsigned int code)
 // translates character keycodes to continuous array indexes
 inline int to_char_keys_index(unsigned int keycode)
 {
-  if (keycode >= KEY_1 && keycode <= KEY_EQUAL)  // keycodes 2-13: US keyboard: 1, 2, ..., 0, -, =
+  // keycodes 2-13: US keyboard: 1, 2, ..., 0, -, =
+  if (keycode >= KEY_1 && keycode <= KEY_EQUAL)
     return keycode - 2;
-  if (keycode >= KEY_Q && keycode <= KEY_RIGHTBRACE)  // keycodes 16-27: q, w, ..., [, ]
+  // keycodes 16-27: q, w, ..., [, ]
+  if (keycode >= KEY_Q && keycode <= KEY_RIGHTBRACE)
     return keycode - 4;
-  if (keycode >= KEY_A && keycode <= KEY_GRAVE)  // keycodes 30-41: a, s, ..., ', `
+  // keycodes 30-41: a, s, ..., ', `
+  if (keycode >= KEY_A && keycode <= KEY_GRAVE)
     return keycode - 6;
-  if (keycode >= KEY_BACKSLASH && keycode <= KEY_SLASH)  // keycodes 43-53: \, z, ..., ., /
+  // keycodes 43-53: \, z, ..., ., /
+  if (keycode >= KEY_BACKSLASH && keycode <= KEY_SLASH)
     return keycode - 7;
   
-  if (keycode == KEY_102ND) return 47;  // key right to the left of 'Z' on US layout
+  // key to the left of 'Z' on US ISO layout
+  if (keycode == KEY_102ND) return 47;
   
   return -1;  // not character keycode
 }

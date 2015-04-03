@@ -162,22 +162,22 @@ void set_signal_handling()
 }
 
 void determine_system_keymap()
-{
-  // custom map will be used; erase existing US keymapping
+{ // custom map will be used; erase existing US keymapping
   memset(char_keys,  '\0', sizeof(char_keys));
   memset(shift_keys, '\0', sizeof(shift_keys));
   memset(altgr_keys, '\0', sizeof(altgr_keys));
   
   // get keymap from dumpkeys
-  // if one knows of a better, more portable way to get wchar_t-s from symbolic keysym-s from `dumpkeys` or `xmodmap` or another, PLEASE LET ME KNOW! kthx
-  std::stringstream ss, dump(execute(COMMAND_STR_DUMPKEYS));  // see example output after i.e. `loadkeys slovene`
-  std::string line;
+  // if one knows of a better, more portable way to get wchar_t-s from
+  // symbolic keysym-s from `dumpkeys` or `xmodmap` or another
+  // see example output after i.e. `loadkeys slovene`
+  std::stringstream ss, dumpkeys(execute(COMMAND_STR_DUMPKEYS));
+  std::string line, kcode, mod, eq;
 
-  unsigned int i = 0;   // keycode
-  int index;
-  int utf8code;      // utf-8 code of keysym answering keycode i
+  unsigned int keycode;
+  int index, utf8code; // utf-8 code of keysym answering keycode i
   
-  while (std::getline(dump, line)) {
+  while (std::getline(dumpkeys, line)) {
     ss.clear();
     ss.str("");
     utf8code = 0;
@@ -189,47 +189,47 @@ void determine_system_keymap()
       index = line.find("U+", index);
     }
     
-    if (++i >= sizeof(char_or_func)) break;  // only ever map keycodes up to 128 (currently N_KEYS_DEFINED are used)
-    if (!is_char_key(i)) continue;  // only map character keys of keyboard
-    
     assert(line.size() > 0);
-    if (line[0] == 'k') {  // if line starts with 'keycode'
-      index = to_char_keys_index(i);
-      
-      ss << &line[14];  // 1st keysym starts at index 14 (skip "keycode XXX = ")
-      ss >> std::hex >> utf8code;
-      // 0XB00CLUELESS: 0xB00 is added to some keysyms that are preceeded with '+'; I don't really know why; see `man keymaps`; `man loadkeys` says numeric keysym values aren't to be relied on, orly?
-      if (line[14] == '+' && (utf8code & 0xB00)) utf8code ^= 0xB00; 
+    ss << line;
+    ss >> kcode;
+    if (kcode == "keycode") {
+      ss >> std::dec >> keycode >> eq >> std::hex >> utf8code;
+      mod = "\0";
+    } else if (kcode == "shift" || kcode == "altgr") { // shift|altgr keycode XXX = 0xXXXX
+      ss.seekg(0); 
+      ss >> mod >> kcode >> std::dec >> keycode >> eq >> std::hex >> utf8code;
+    }
+
+    // only ever map keycodes up to 128 (currently N_KEYS_DEFINED are used)
+    if (keycode >= sizeof(char_or_func)) break;
+    // only map character keys of keyboard
+    if (!is_char_key(keycode)) continue;
+    
+    index = to_char_keys_index(keycode);
+    if (mod.empty()) { // standard keycode line
+      // 0xb00 is added to keysyms preceeded with '+'
+      if (line[14] == '+' && (utf8code & 0xb00)) utf8code ^= 0xb00;
       char_keys[index] = static_cast<wchar_t>(utf8code);
-      
-      // if there is a second keysym column, assume it is a shift column
+      // second keysym is shift column
       if (ss >> std::hex >> utf8code) {
-        if (line[14] == '+' && (utf8code & 0xB00)) utf8code ^= 0xB00;
+        if (line[14] == '+' && (utf8code & 0xb00)) utf8code ^= 0xb00;
         shift_keys[index] = static_cast<wchar_t>(utf8code);
       }
-      
-      // if there is a third keysym column, assume it is an altgr column
+      // third keysym is altgr column
       if (ss >> std::hex >> utf8code) {
-        if (line[14] == '+' && (utf8code & 0xB00)) utf8code ^= 0xB00;
+        if (line[14] == '+' && (utf8code & 0xb00)) utf8code ^= 0xb00;
         altgr_keys[index] = static_cast<wchar_t>(utf8code);
       }
-      
-      continue;
-    }
-    
-    // else if line starts with 'shift i'
-    index = to_char_keys_index(--i);
-    ss << &line[21];  // 1st keysym starts at index 21 (skip "\tshift\tkeycode XXX = " or "\taltgr\tkeycode XXX = ")
-    ss >> std::hex >> utf8code;
-    if (line[21] == '+' && (utf8code & 0xB00)) utf8code ^= 0xB00;  // see line 0XB00CLUELESS
-    
-    if (line[1] == 's')  // if line starts with "shift"
+    // shift or altgr line
+    } else if (mod == "shift") {
+      if (line[21] == '+' && (utf8code & 0xb00)) utf8code ^= 0xb00;
       shift_keys[index] = static_cast<wchar_t>(utf8code);
-    if (line[1] == 'a')  // if line starts with "altgr"
+    } else if (mod == "altgr") {
+      if (line[21] == '+' && (utf8code & 0xb00)) utf8code ^= 0xb00;
       altgr_keys[index] = static_cast<wchar_t>(utf8code);
-  } // while (getline(dump, line))
+    }
+  } // end while getline
 }
-
 
 void parse_input_keymap()
 {
