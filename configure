@@ -560,10 +560,10 @@ MAKEFLAGS=
 # Identity of this package.
 PACKAGE_NAME='logkeys'
 PACKAGE_TARNAME='logkeys'
-PACKAGE_VERSION='0.1.1b-svn'
-PACKAGE_STRING='logkeys 0.1.1b-svn'
-PACKAGE_BUGREPORT='kerncece+logkeys@gmail.com'
-PACKAGE_URL='http://code.google.com/p/logkeys/'
+PACKAGE_VERSION='0.1.3'
+PACKAGE_STRING='logkeys 0.1.3'
+PACKAGE_BUGREPORT='wb@tuome.la'
+PACKAGE_URL='https://github.com/traxxas/logkeys/'
 
 ac_unique_file="src/logkeys.cc"
 # Factoring default headers for most tests.
